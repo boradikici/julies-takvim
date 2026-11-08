@@ -131,7 +131,7 @@ function ui(){S.mode='week';
 $('#wk').value=S.ref;$('#bwc').checked=S.bw;$('#hd').value=S.head;$('#sb').value=S.sub;$('#hw').value=S.hw;$('#sw').value=S.sw;$('#hs').value=S.hs;$('#ss').value=S.ss;$('#dim').value=S.dim;$('#dv').textContent=S.dim;bgs();cols();$('#bgc').value=S.bgc||'#ffffff';
 $('#rng').textContent=title().t+' '+title().s;renderList()}
 function renderList(){const l=$('#list');l.innerHTML='';const r=range();
-[...S.events].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(e=>{
+[...S.events].sort((a,b)=>(a.date||'').localeCompare(b.date||'')||String(a.id).localeCompare(String(b.id))).forEach(e=>{
 const d=document.createElement('div');d.className='row'+(inR(e,r)?'':' dim');d.dataset.id=e.id;
 d.innerHTML='<div class="r1"><input type="date" class="d"><button class="x">✕</button></div><input type="text" class="t" placeholder="Etkinlik / sanatçı adı"><input type="text" class="s" placeholder="Saat (örn. 21:00)"><label class="ph"><span class="th"></span><b>Fotoğraf seç</b><input type="file" accept="image/*" hidden></label>';
 const q=s=>d.querySelector(s);q('.d').value=e.date;q('.t').value=e.title;q('.s').value=e.time||'';
@@ -159,7 +159,7 @@ $('#bgx').onclick=()=>{S.bg=null;saveBg();bgs()};
 $('#bgc').oninput=e=>{S.bgc=e.target.value;save()};
 $('#bgr').onclick=()=>{S.bgc=null;save();$('#bgc').value='#ffffff'};
 $('#bgf').onchange=e=>{const f=e.target.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{S.bg=shrink(im,[1440,1200,960,720],220000);saveBg();bgs()};im.src=fr.result};fr.readAsDataURL(f)};
-$('#add').onclick=()=>{const r=range(),e={id:String(Date.now()),date:r.a,title:'',time:'',img:null};S.events.push(e);save(e);renderList();const el=document.querySelector('.row[data-id="'+e.id+'"]');if(el)el.scrollIntoView({block:'center'})};
+$('#add').onclick=()=>{const r=range(),ds=S.events.filter(x=>inR(x,r)).map(x=>x.date).sort(),e={id:String(Date.now()),date:ds.length?ds[ds.length-1]:r.a,title:'',time:'',img:null};S.events.push(e);save(e);renderList();const el=document.querySelector('.row[data-id="'+e.id+'"]');if(el)el.scrollIntoView({block:'center'})};
 const loadImg=s=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=s});
 function wrap(c,t,w){const out=[];let cur='';t.split(/\s+/).filter(Boolean).forEach(x=>{const n=cur?cur+' '+x:x;if(cur&&c.measureText(n).width>w){out.push(cur);cur=x}else cur=n});if(cur)out.push(cur);return out}
 function fit(c,t,w,st,ml,wt='bold'){let L=[];for(let s=Math.floor(st);s>=7;s--){c.font=`${wt} ${s}px ${F}`;L=wrap(c,t,w);if(L.length<=ml&&L.every(x=>c.measureText(x).width<=w))return{s,L}}return{s:7,L}}
@@ -178,7 +178,7 @@ c.font=`bold ${f.s}px ${F}`;c.fillStyle=CL.title;let ty=ry+rH/2-(f.L.length-1)*l
 if(HT){c.fillStyle='#0a0a0a';c.fillRect(x,ry+rH,w,bH);
 const g=fit(c,(e.time||'').trim(),w-2*p,bH*.5,1);c.font=`bold ${g.s}px ${F}`;c.fillStyle=CL.time;c.textAlign='center';c.fillText(g.L[0]||'',x+w/2,ry+rH+bH/2+g.s*.35)}}
 let CV=null,HT=false,CL={};
-async function draw(q){const W=1080,H=1440,r=range(),ev=S.events.filter(e=>inR(e,r)).sort((a,b)=>a.date.localeCompare(b.date));
+async function draw(q){const W=1080,H=1440,r=range(),ev=S.events.filter(e=>inR(e,r)).sort((a,b)=>a.date.localeCompare(b.date)||String(a.id).localeCompare(String(b.id)));
 const ims=await Promise.all(ev.map(e=>e.img?loadImg(e.img):null)),logo=await loadImg(LOGO),bgi=S.bg?await loadImg(S.bg):null;
 const cv=document.createElement('canvas');cv.width=W;cv.height=H;const c=cv.getContext('2d');
 const bg=c.createLinearGradient(0,0,W,H);bg.addColorStop(0,'#9b968d');bg.addColorStop(1,'#3f3c38');c.fillStyle=S.bgc||'#ffffff';c.fillRect(0,0,W,H);CL=Object.assign({},DC,S.col||{});HT=ev.some(e=>(e.time||'').trim());
