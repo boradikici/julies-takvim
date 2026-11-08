@@ -190,7 +190,7 @@ const fs=s*.2;c.textBaseline='alphabetic';c.textAlign='left';c.font=`bold ${fs}p
 if(e){c.shadowColor='rgba(0,0,0,.65)';c.shadowBlur=10}c.fillStyle=e?CL.dateP:CL.dateE;c.fillText(n,x+s*.07,y+s*.07+fs*.76);c.shadowBlur=0;c.shadowColor='transparent';
 const t=e?(e.title||'').trim():'',m=e?(e.time||'').trim():'';
 if(t||m){const bh=s*.27,by=y+s-bh,p=s*.05;c.fillStyle='#f70000';c.fillRect(x,by,s,bh);c.textAlign='left';
-if(t&&m){const f=fit(c,t,s-2*p,bh*.36,1),g=fit(c,m,s-2*p,bh*.28,1,'300');c.font=`bold ${f.s}px ${F}`;c.fillStyle=CL.title;c.fillText(f.L[0],x+p,by+bh*.47);c.font=`300 ${g.s}px ${F}`;c.fillStyle=CL.time;c.fillText(g.L[0],x+p,by+bh*.84)}
+if(t&&m){const f=fit(c,t,s-2*p,bh*.36,1),g=fit(c,m,s-2*p,bh*.28,1,'bold');c.font=`bold ${f.s}px ${F}`;c.fillStyle=CL.title;c.fillText(f.L[0],x+p,by+bh*.47);c.font=`bold ${g.s}px ${F}`;c.fillStyle=CL.time;c.fillText(g.L[0],x+p,by+bh*.84)}
 else if(t){const f=fit(c,t,s-2*p,bh*.4,2),lh=f.s*1.05;c.font=`bold ${f.s}px ${F}`;c.fillStyle=CL.title;const ty=by+bh/2-(f.L.length-1)*lh/2+f.s*.35;f.L.forEach((q,i)=>c.fillText(q,x+p,ty+i*lh))}
 else{const g=fit(c,m,s-2*p,bh*.4,1);c.font=`bold ${g.s}px ${F}`;c.fillStyle=CL.time;c.fillText(g.L[0],x+p,by+bh/2+g.s*.35)}}}
 let CV=null,HT=false,CL={};
