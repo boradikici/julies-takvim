@@ -38,6 +38,14 @@ button,.btn{min-height:44px}.btn{display:flex;align-items:center;justify-content
 input[type=date],input[type=month]{-webkit-appearance:none;appearance:none;min-height:44px;min-width:0}
 .r1 input{flex:1;min-width:0}.r1 .x{padding:10px 16px}
 .fr{flex-wrap:wrap}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tile{aspect-ratio:1;border-radius:10px;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg) center/cover;line-height:1.1}
+.tile b{font-size:22px}.tile small{font-size:11px;color:var(--mut)}
+.tile.has{background-color:#222;color:#fff}.tile.has small{color:#ddd}.tile.has b{text-shadow:0 1px 4px #000}
+.tile.on{outline:3px solid var(--red);outline-offset:1px}
+#crop{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px}
+#crop .cc{background:var(--card);color:var(--fg);border-radius:14px;padding:16px;max-width:420px;width:100%}
+#crop canvas{display:block;margin:0 auto 10px;border-radius:8px;touch-action:none;background:#000}
 .lb{display:block;font-size:13px;color:var(--mut);margin:12px 0 6px}
 textarea{font:inherit;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);resize:vertical}
 .bgr{display:flex;gap:8px}.bgr>*{flex:1;text-align:center}
@@ -57,14 +65,13 @@ window.FIREBASE_CONFIG={apiKey:"AIzaSyCtYuMrxzVD8vOqd2ucsVURdQxny9nD1YE",authDom
 <main>
 <section>
 <h2>Görünüm</h2>
-<div id="wkBox"><label class="lb" style="margin-top:0">Hafta (haftadaki herhangi bir gün)</label><input type="date" id="wk"></div>
-<div class="rng" id="rng"></div>
+<div id="wkBox"><label class="lb" style="margin-top:0">Hafta (pazar – pazar)</label><select id="wk" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)"></select></div>
 <label class="lb">Başlık (sağ üst)</label><textarea id="hd" rows="2" placeholder="örn. NOVEMBER (Enter ile alt satıra geç)"></textarea><div class="fr"><select id="hw"><option value="bold">Bold</option><option value="300">Light</option></select><label>Punto <input type="number" id="hs" min="10" max="220" step="2"></label></div>
 <label class="lb">Alt başlık</label><textarea id="sb" rows="2" placeholder="örn. Live Music Program"></textarea><div class="fr"><select id="sw"><option value="bold">Bold</option><option value="300">Light</option></select><label>Punto <input type="number" id="ss" min="10" max="160" step="2"></label></div>
 <label class="lb">Arka plan</label><div class="bgr"><label class="btn">Fotoğraf seç<input type="file" id="bgf" accept="image/*" hidden></label><button id="bgx">Kaldır</button></div><div class="hint" id="bgs"></div>
 <label class="lb">Arka plan rengi</label><div class="fr"><input type="color" id="bgc"><button id="bgr">Varsayılan</button></div><div class="hint">Arka plan fotoğrafı seçilirse fotoğraf renkten önce görünür.</div>
 <label class="lb">Arka plan karartma: <span id="dv"></span>%</label><input type="range" id="dim" min="0" max="85" style="width:100%">
-<label class="lb">Yazı renkleri</label><div class="cols"><label>Başlık <input type="color" data-k="head"></label><label>Alt başlık <input type="color" data-k="sub"></label><label>Tarih <input type="color" data-k="date"></label><label>Etkinlik adı <input type="color" data-k="title"></label><label>Saat <input type="color" data-k="time"></label><label>Alt yazı <input type="color" data-k="foot"></label></div>
+<label class="lb">Yazı renkleri</label><div class="cols"><label>Başlık <input type="color" data-k="head"></label><label>Alt başlık <input type="color" data-k="sub"></label><label>Tarih (boş gün) <input type="color" data-k="dateE"></label><label>Tarih (fotoğraflı) <input type="color" data-k="dateP"></label><label>Etkinlik adı <input type="color" data-k="title"></label><label>Saat <input type="color" data-k="time"></label><label>Adres <input type="color" data-k="foot"></label></div>
 <div class="hint"><span style="display:inline-block;width:12px;height:12px;background:#f70000;border-radius:3px;vertical-align:-1px;margin-right:6px"></span>Logo Kırmızı RGB: 247:0:0</div>
 <label class="chk"><input type="checkbox" id="bwc" checked> Fotoğrafları siyah-beyaz yap</label>
 
@@ -76,10 +83,9 @@ window.FIREBASE_CONFIG={apiKey:"AIzaSyCtYuMrxzVD8vOqd2ucsVURdQxny9nD1YE",authDom
 <div class="hint">iPhone’da “Paylaş / Kaydet” → “Görüntüyü Kaydet”. Olmazsa görsele basılı tutup kaydedebilirsin. Boyut: 1080×1440 (3:4).</div>
 </section>
 <section>
-<h2>Etkinlikler</h2>
-<button id="imp" hidden style="width:100%;margin-bottom:10px">Bu cihazdaki etkinlikleri ortak listeye aktar</button><div id="list"></div>
-<button id="add" style="width:100%">+ Etkinlik ekle</button>
-<div class="hint">Seçili aralık dışındaki etkinlikler soluk görünür.</div>
+<h2>Günler</h2>
+<div class="hint" style="margin:0 0 10px">Bir güne dokun, fotoğrafı ve bilgileri gir. Dokunmadığın günler boş kalır.</div>
+<div class="tiles" id="tiles"></div><div id="dayEd"></div>
 </section>
 </main>
 <script>
@@ -87,25 +93,22 @@ const LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAgQDA
 const TM=['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 const TD=['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
 const $=s=>document.querySelector(s);
-let S={mode:'week',ref:'2026-11-09',month:'2026-11',bw:true,events:[
-{id:1,date:'2026-11-12',title:'Sanatçı Adı',sub:'SOUL & FUNK',img:null},
-{id:2,date:'2026-11-13',title:'Grup Adı',sub:'JAZZ',img:null},
-{id:3,date:'2026-11-14',title:'Özel Gece',sub:'PARTY',img:null}]};
+let S={bw:true,days:{}};
 try{const s=localStorage.getItem('jj-v1');if(s)S=JSON.parse(s)}catch(e){}
 if(S.head===undefined)S.head='NOVEMBER';if(S.dim===undefined)S.dim=30;
 if(S.sub===undefined){const p=(S.head||'').split('\n');S.head=p[0]||'';S.sub=p.slice(1).join(' ')}
-S.hw=S.hw||'bold';S.hs=S.hs||110;S.sw=S.sw||'bold';S.ss=S.ss||48;
+S.days=S.days||{};S.hw=S.hw||'bold';S.hs=S.hs||110;S.sw=S.sw||'bold';S.ss=S.ss||48;
 let DB=null,CAN=true,PU=false,SAVED='Tüm değişiklikler kaydedildi';const DEL=new Set();const TQ={},SK=['head','sub','hw','hs','sw','ss','dim','bgc','col','bw'];
 const werr=er=>{if(er&&er.code==='quota_exceeded')alert('Depolama dolu. Eski fotoğrafları silin.');else if(er&&er.code==='invalid_argument')alert('Kaydedilemedi: düzenleme izniniz olmayabilir veya fotoğraf çok büyük.');else console.error(er)};
 function later(k,fn){TQ[k]=fn;pend()}
-const evData=e=>({date:e.date||'',title:e.title||'',time:e.time||'',img:e.img||null});
-const save=e=>{if(DB){if(e)later('e'+e.id,()=>DB.doc('events/'+e.id).set(evData(e)));else later('s',()=>{const o={};SK.forEach(k=>{if(S[k]!==undefined)o[k]=S[k]});DB.doc('settings/main').set(o)});return}
+const dayData=d=>({title:d.title||'',time:d.time||'',img:d.img||null});
+const save=e=>{if(DB){if(e)later('d'+e,()=>{const d=S.days[e];return d?DB.doc('days/'+e).set(dayData(d)):DB.doc('days/'+e).delete()});else later('s',()=>{const o={};SK.forEach(k=>{if(S[k]!==undefined)o[k]=S[k]});DB.doc('settings/main').set(o)});return}
 try{localStorage.setItem('jj-v1',JSON.stringify(S))}catch(x){alert('Hafıza dolu olabilir; bazı fotoğraflar kaydedilmemiş olabilir.')}};
-function savePref(){try{localStorage.setItem('jj-p',JSON.stringify({mode:S.mode,ref:S.ref,month:S.month}))}catch(x){}if(!DB)save()}
+function savePref(){try{localStorage.setItem('jj-p',JSON.stringify({wk:S.wk}))}catch(x){}if(!DB)save()}
 const saveBg=()=>{if(DB)later('bg',()=>DB.doc('settings/bg').set({img:S.bg||null}));else save()};
-function delEv(e){S.events=S.events.filter(x=>String(x.id)!==String(e.id));if(DB){DEL.add(String(e.id));later('e'+e.id,()=>DB.doc('events/'+e.id).delete())}else save();renderList()}
+function clearDay(k){delete S.days[k];if(DB){DEL.add(k);save(k)}else save();ui()}
 function shrink(im,sides,lim){let u='';for(const m of sides)for(const q of [.8,.65,.5,.38]){const k=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);u=c.toDataURL('image/jpeg',q);if(u.length<lim)return u}return u}
-function lock(){if(CAN)return;document.querySelectorAll('#hd,#sb,#hw,#sw,#hs,#ss,#bgc,#bgr,#bgx,#add,#bgf,#imp,input[data-k],#list input,#list button').forEach(x=>x.disabled=true)}
+function lock(){if(CAN)return;document.querySelectorAll('#hd,#sb,#hw,#sw,#hs,#ss,#bgc,#bgr,#bgx,#add,#bgf,#imp,input[data-k],#dayEd input,#dayEd button').forEach(x=>x.disabled=true)}
 function refresh(){const a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='file'){PU=true}else{PU=false;ui()}}
 function pend(){const n=Object.keys(TQ).length,b=document.getElementById('sv'),s=document.getElementById('sm');if(b){b.disabled=!n;b.textContent=n?'Kaydet':'Kaydedildi'}if(s)s.textContent=n?'Kaydedilmemi\u015f de\u011fi\u015fiklikler var':SAVED}
 async function doSave(){const b=document.getElementById('sv');b.disabled=true;b.textContent='Kaydediliyor\u2026';let bad=0;
@@ -120,33 +123,45 @@ else dl(bl)}catch(x){console.error(x)}b.disabled=false;b.textContent=t}
 document.addEventListener('focusout',()=>{if(PU)setTimeout(()=>{if(PU)refresh()},150)});
 const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const pd=s=>new Date(s+'T00:00:00');
-function wkRange(){const d=pd(S.ref),k=(d.getDay()+6)%7,a=new Date(d);a.setDate(d.getDate()-k);const b=new Date(a);b.setDate(a.getDate()+6);return{a:iso(a),b:iso(b),da:a,db:b}}
-function range(){if(S.mode==='week'){const r=wkRange();return{a:r.a,b:r.b}}return{a:S.month+'-01',b:S.month+'-31'}}
-const inR=(e,r)=>e.date&&e.date>=r.a&&e.date<=r.b;
-function title(){if(S.mode==='month'){const[y,m]=S.month.split('-');return{t:TM[+m-1],s:y}}
-const r=wkRange(),a=r.da,b=r.db;
-const t=a.getMonth()===b.getMonth()?`${a.getDate()} – ${b.getDate()} ${TM[b.getMonth()]}`:`${a.getDate()} ${TM[a.getMonth()]} – ${b.getDate()} ${TM[b.getMonth()]}`;
-return{t,s:String(b.getFullYear())}}
-function ui(){S.mode='week';
-$('#wk').value=S.ref;$('#bwc').checked=S.bw;$('#hd').value=S.head;$('#sb').value=S.sub;$('#hw').value=S.hw;$('#sw').value=S.sw;$('#hs').value=S.hs;$('#ss').value=S.ss;$('#dim').value=S.dim;$('#dv').textContent=S.dim;bgs();cols();$('#bgc').value=S.bgc||'#ffffff';
-$('#rng').textContent=title().t+' '+title().s;renderList()}
-function renderList(){const l=$('#list');l.innerHTML='';const r=range();
-[...S.events].sort((a,b)=>(a.date||'').localeCompare(b.date||'')||String(a.id).localeCompare(String(b.id))).forEach(e=>{
-const d=document.createElement('div');d.className='row'+(inR(e,r)?'':' dim');d.dataset.id=e.id;
-d.innerHTML='<div class="r1"><input type="date" class="d"><button class="x">✕</button></div><input type="text" class="t" placeholder="Etkinlik / sanatçı adı"><input type="text" class="s" placeholder="Saat (örn. 21:00)"><label class="ph"><span class="th"></span><b>Fotoğraf seç</b><input type="file" accept="image/*" hidden></label>';
-const q=s=>d.querySelector(s);q('.d').value=e.date;q('.t').value=e.title;q('.s').value=e.time||'';
-if(e.img)q('.th').style.backgroundImage=`url(${e.img})`;
-q('.d').onchange=ev=>{e.date=ev.target.value;save(e);renderList()};
-q('.t').oninput=ev=>{e.title=ev.target.value;save(e)};
-q('.s').oninput=ev=>{e.time=ev.target.value;save(e)};
-q('.x').onclick=()=>delEv(e);
-q('input[type=file]').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const fr=new FileReader();
-fr.onload=()=>{const im=new Image();im.onload=()=>{e.img=shrink(im,[900,720,560],200000);save(e);q('.th').style.backgroundImage=`url(${e.img})`};im.src=fr.result};fr.readAsDataURL(f)};
-l.appendChild(d)});lock()}
-$('#wk').onchange=e=>{if(e.target.value){S.ref=e.target.value;savePref();ui()}};
+const TRM=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'],TRD=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+const wl=(s,f)=>s.getMonth()===f.getMonth()?`${s.getDate()}–${f.getDate()} ${TRM[f.getMonth()]}`:`${s.getDate()} ${TRM[s.getMonth()]} – ${f.getDate()} ${TRM[f.getMonth()]}`;
+function weeks(){const a=[],d=pd('2026-11-01'),e=pd('2027-01-31');while(d<=e){const s=new Date(d),f=new Date(d);f.setDate(f.getDate()+7);a.push({s:iso(s),l:wl(s,f)});d.setDate(d.getDate()+7)}return a}
+function days8(){const d=pd(S.wk);return [...Array(8)].map((_,i)=>{const x=new Date(d);x.setDate(d.getDate()+i);return iso(x)})}
+let SEL=null;
+function ui(){const W=weeks();if(!S.wk||!W.some(w=>w.s===S.wk)){const t=iso(new Date());S.wk=(W.filter(w=>w.s<=t).pop()||W[0]).s}
+const sl=$('#wk');if(!sl.options.length)W.forEach(w=>sl.add(new Option(w.l,w.s)));sl.value=S.wk;
+$('#bwc').checked=S.bw;$('#hd').value=S.head;$('#sb').value=S.sub;$('#hw').value=S.hw;$('#sw').value=S.sw;$('#hs').value=S.hs;$('#ss').value=S.ss;$('#dim').value=S.dim;$('#dv').textContent=S.dim;bgs();cols();$('#bgc').value=S.bgc||'#ffffff';
+renderDays()}
+function renderDays(){const ds=days8(),t=$('#tiles');t.innerHTML='';if(!SEL||!ds.includes(SEL))SEL=ds[0];
+ds.forEach(k=>{const d=pd(k),e=S.days[k],b=document.createElement('button');b.className='tile'+(k===SEL?' on':'')+(e&&(e.img||e.title||e.time)?' has':'');
+b.innerHTML='<b>'+d.getDate()+'</b><small>'+TRD[d.getDay()].slice(0,3)+'</small>';if(e&&e.img)b.style.backgroundImage=`url(${e.img})`;
+b.onclick=()=>{SEL=k;renderDays()};t.appendChild(b)});
+const k=SEL,d=pd(k),e=S.days[k]||{},ed=$('#dayEd');
+ed.innerHTML='<h2 style="margin-top:16px">'+d.getDate()+' '+TRM[d.getMonth()]+' '+TRD[d.getDay()]+'</h2><div class="ph" style="margin-bottom:8px"><span class="th"></span><label class="btn">Fotoğraf seç<input type="file" accept="image/*" hidden></label></div><input type="text" class="t" placeholder="Etkinlik / sanatçı adı"><input type="text" class="s" placeholder="Saat (örn. 21:00)" style="margin-top:8px"><button class="x" style="width:100%;margin-top:10px">Bu günü boşalt</button>';
+const q=s=>ed.querySelector(s),set=(f,v)=>{const x=S.days[k]||(S.days[k]={title:'',time:'',img:null});x[f]=v;save(k)};
+q('.t').value=e.title||'';q('.s').value=e.time||'';if(e.img)q('.th').style.backgroundImage=`url(${e.img})`;
+q('.t').oninput=ev=>set('title',ev.target.value);q('.s').oninput=ev=>set('time',ev.target.value);
+q('.x').onclick=()=>clearDay(k);
+q('input[type=file]').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>cropper(im,u=>{set('img',u);renderDays()});im.src=fr.result};fr.readAsDataURL(f);ev.target.value=''};
+lock()}
+function cropper(src,done){const V=Math.floor(Math.min(380,innerWidth*.8,innerHeight*.55));
+const k0=Math.min(1,1600/Math.max(src.width,src.height)),im=document.createElement('canvas');im.width=Math.round(src.width*k0);im.height=Math.round(src.height*k0);im.getContext('2d').drawImage(src,0,0,im.width,im.height);
+const o=document.createElement('div');o.id='crop';
+o.innerHTML='<div class="cc"><div style="font-weight:700;margin-bottom:10px">Fotoğrafı kare içine yerleştir</div><canvas></canvas><input type="range" min="100" max="400" value="100" style="width:100%"><div class="hint">Sürükleyerek konumlandır, kaydırıcıyla yakınlaştır.</div><div class="fr"><button class="pri" style="flex:1">Tamam</button><button style="flex:1">İptal</button></div></div>';
+document.body.appendChild(o);
+const cv=o.querySelector('canvas'),g=cv.getContext('2d'),sl=o.querySelector('input'),bs=o.querySelectorAll('button');cv.width=cv.height=V;cv.style.width=cv.style.height=V+'px';
+const base=Math.max(V/im.width,V/im.height);let sc=base,x=(V-im.width*sc)/2,y=(V-im.height*sc)/2;
+const cl=()=>{x=Math.min(0,Math.max(V-im.width*sc,x));y=Math.min(0,Math.max(V-im.height*sc,y))};
+const dr=()=>{cl();g.fillStyle='#000';g.fillRect(0,0,V,V);g.drawImage(im,x,y,im.width*sc,im.height*sc)};dr();
+sl.oninput=()=>{const cx=(V/2-x)/sc,cy=(V/2-y)/sc;sc=base*sl.value/100;x=V/2-cx*sc;y=V/2-cy*sc;dr()};
+let d=null;cv.onpointerdown=e=>{d={px:e.clientX,py:e.clientY,x,y};cv.setPointerCapture(e.pointerId)};
+cv.onpointermove=e=>{if(d){x=d.x+e.clientX-d.px;y=d.y+e.clientY-d.py;dr()}};cv.onpointerup=cv.onpointercancel=()=>{d=null};
+bs[1].onclick=()=>o.remove();
+bs[0].onclick=()=>{let u='';for(const R of [800,640,520])for(const q of [.82,.7,.58,.45]){const c=document.createElement('canvas');c.width=c.height=R;const f=R/V;c.getContext('2d').drawImage(im,x*f,y*f,im.width*sc*f,im.height*sc*f);u=c.toDataURL('image/jpeg',q);if(u.length<200000){o.remove();done(u);return}}o.remove();done(u)}}
+$('#wk').onchange=e=>{S.wk=e.target.value;SEL=null;savePref();ui()};
 $('#bwc').onchange=e=>{S.bw=e.target.checked;save()};
 function bgs(){$('#bgs').textContent=S.bg?'Arka plan seçili':'Arka plan yok (gri zemin)'}
-const DC={head:'#0b0b0b',sub:'#0b0b0b',date:'#0b0b0b',title:'#0b0b0b',time:'#ffffff',foot:'#0b0b0b'};
+const DC={head:'#0b0b0b',sub:'#0b0b0b',dateE:'#0b0b0b',dateP:'#ffffff',title:'#0b0b0b',time:'#0b0b0b',foot:'#0b0b0b'};
 function cols(){document.querySelectorAll('input[data-k]').forEach(i=>{i.value=(S.col&&S.col[i.dataset.k])||DC[i.dataset.k];i.oninput=()=>{S.col=Object.assign({},S.col,{[i.dataset.k]:i.value});save()}})}
 $('#hd').oninput=e=>{S.head=e.target.value;save()};
 $('#sb').oninput=e=>{S.sub=e.target.value;save()};
@@ -159,7 +174,6 @@ $('#bgx').onclick=()=>{S.bg=null;saveBg();bgs()};
 $('#bgc').oninput=e=>{S.bgc=e.target.value;save()};
 $('#bgr').onclick=()=>{S.bgc=null;save();$('#bgc').value='#ffffff'};
 $('#bgf').onchange=e=>{const f=e.target.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{S.bg=shrink(im,[1440,1200,960,720],220000);saveBg();bgs()};im.src=fr.result};fr.readAsDataURL(f)};
-$('#add').onclick=()=>{const r=range(),ds=S.events.filter(x=>inR(x,r)).map(x=>x.date).sort(),e={id:String(Date.now()),date:ds.length?ds[ds.length-1]:r.a,title:'',time:'',img:null};S.events.push(e);save(e);renderList();const el=document.querySelector('.row[data-id="'+e.id+'"]');if(el)el.scrollIntoView({block:'center'})};
 const loadImg=s=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=s});
 function wrap(c,t,w){const out=[];let cur='';t.split(/\s+/).filter(Boolean).forEach(x=>{const n=cur?cur+' '+x:x;if(cur&&c.measureText(n).width>w){out.push(cur);cur=x}else cur=n});if(cur)out.push(cur);return out}
 function fit(c,t,w,st,ml,wt='bold'){let L=[];for(let s=Math.floor(st);s>=7;s--){c.font=`${wt} ${s}px ${F}`;L=wrap(c,t,w);if(L.length<=ml&&L.every(x=>c.measureText(x).width<=w))return{s,L}}return{s:7,L}}
@@ -167,32 +181,31 @@ function photo(c,im,x,y,w,h){w=Math.round(w);h=Math.round(h);const o=document.cr
 if(!im){g.fillStyle='#222';g.fillRect(0,0,w,h)}else{const k=Math.max(w/im.width,h/im.height),iw=im.width*k,ih=im.height*k;g.drawImage(im,(w-iw)/2,(h-ih)/2,iw,ih);
 if(S.bw){const d=g.getImageData(0,0,w,h),p=d.data;for(let i=0;i<p.length;i+=4){const v=.3*p[i]+.59*p[i+1]+.11*p[i+2];p[i]=p[i+1]=p[i+2]=v}g.putImageData(d,0,0)}}
 c.drawImage(o,x,y)}
-function card(c,x,y,w,h,e,im){const fs=Math.min(w*.34,h*.2),dH=fs*.86,rH=Math.min(w*.22,h*.17),bH=HT?rH*.7:0,pH=Math.max(h-dH-rH-bH,24),d=pd(e.date);
-c.textBaseline='alphabetic';c.textAlign='left';c.fillStyle=CL.date;c.font=`bold ${fs}px ${F}`;
-const n=String(d.getDate()).padStart(2,'0');c.fillText(n,x,y+fs*.8);const nw=c.measureText(n).width,sz=fs*.19;
-c.font=`bold ${sz}px ${F}`;c.fillText(TM[d.getMonth()],x+nw+w*.025,y+fs*.4);c.fillText(TD[d.getDay()],x+nw+w*.025,y+fs*.4+sz*1.15);
-photo(c,im,x,y+dH,w,pH);
-const ry=y+dH+pH;c.fillStyle='#f70000';c.fillRect(x,ry,w,rH);
-const p=w*.05,f=fit(c,(e.title||'').trim(),w-2*p,rH*.42,2),lh=f.s*1.02;
-c.font=`bold ${f.s}px ${F}`;c.fillStyle=CL.title;let ty=ry+rH/2-(f.L.length-1)*lh/2+f.s*.35;f.L.forEach((t,i)=>c.fillText(t,x+p,ty+i*lh));
-if(HT){c.fillStyle='#0a0a0a';c.fillRect(x,ry+rH,w,bH);
-const g=fit(c,(e.time||'').trim(),w-2*p,bH*.5,1);c.font=`bold ${g.s}px ${F}`;c.fillStyle=CL.time;c.textAlign='center';c.fillText(g.L[0]||'',x+w/2,ry+rH+bH/2+g.s*.35)}}
+function box(c,x,y,s,k,d,im){const e=d&&(d.img||(d.title||'').trim()||(d.time||'').trim())?d:null,n=String(pd(k).getDate());
+if(!e){c.fillStyle='#fff';c.fillRect(x,y,s,s);c.strokeStyle='#0b0b0b';c.lineWidth=3;c.strokeRect(x+1.5,y+1.5,s-3,s-3)}
+else if(im)photo(c,im,x,y,s,s);else{c.fillStyle='#1b1b1b';c.fillRect(x,y,s,s)}
+const fs=s*.2;c.textBaseline='alphabetic';c.textAlign='left';c.font=`bold ${fs}px ${F}`;
+if(e){c.shadowColor='rgba(0,0,0,.65)';c.shadowBlur=10}c.fillStyle=e?CL.dateP:CL.dateE;c.fillText(n,x+s*.07,y+s*.07+fs*.76);c.shadowBlur=0;c.shadowColor='transparent';
+const t=e?(e.title||'').trim():'',m=e?(e.time||'').trim():'';
+if(t||m){const bh=s*.27,by=y+s-bh,p=s*.05;c.fillStyle='#f70000';c.fillRect(x,by,s,bh);c.textAlign='left';
+if(t&&m){const f=fit(c,t,s-2*p,bh*.36,1),g=fit(c,m,s-2*p,bh*.28,1,'300');c.font=`bold ${f.s}px ${F}`;c.fillStyle=CL.title;c.fillText(f.L[0],x+p,by+bh*.47);c.font=`300 ${g.s}px ${F}`;c.fillStyle=CL.time;c.fillText(g.L[0],x+p,by+bh*.84)}
+else if(t){const f=fit(c,t,s-2*p,bh*.4,2),lh=f.s*1.05;c.font=`bold ${f.s}px ${F}`;c.fillStyle=CL.title;const ty=by+bh/2-(f.L.length-1)*lh/2+f.s*.35;f.L.forEach((q,i)=>c.fillText(q,x+p,ty+i*lh))}
+else{const g=fit(c,m,s-2*p,bh*.4,1);c.font=`bold ${g.s}px ${F}`;c.fillStyle=CL.time;c.fillText(g.L[0],x+p,by+bh/2+g.s*.35)}}}
 let CV=null,HT=false,CL={};
-async function draw(q){const W=1080,H=1440,r=range(),ev=S.events.filter(e=>inR(e,r)).sort((a,b)=>a.date.localeCompare(b.date)||String(a.id).localeCompare(String(b.id)));
-const ims=await Promise.all(ev.map(e=>e.img?loadImg(e.img):null)),logo=await loadImg(LOGO),bgi=S.bg?await loadImg(S.bg):null;
+async function draw(q){const W=1080,H=1440,ds=days8();
+const ims=await Promise.all(ds.map(k=>S.days[k]&&S.days[k].img?loadImg(S.days[k].img):null)),logo=await loadImg(LOGO),bgi=S.bg?await loadImg(S.bg):null;
 const cv=document.createElement('canvas');cv.width=W;cv.height=H;const c=cv.getContext('2d');
-const bg=c.createLinearGradient(0,0,W,H);bg.addColorStop(0,'#9b968d');bg.addColorStop(1,'#3f3c38');c.fillStyle=S.bgc||'#ffffff';c.fillRect(0,0,W,H);CL=Object.assign({},DC,S.col||{});HT=ev.some(e=>(e.time||'').trim());
+const bg=c.createLinearGradient(0,0,W,H);bg.addColorStop(0,'#9b968d');bg.addColorStop(1,'#3f3c38');c.fillStyle=S.bgc||'#ffffff';c.fillRect(0,0,W,H);CL=Object.assign({},DC,S.col||{});
 if(bgi){const k=Math.max(W/bgi.width,H/bgi.height),iw=bgi.width*k,ih=bgi.height*k;c.drawImage(bgi,(W-iw)/2,(H-ih)/2,iw,ih);c.fillStyle=`rgba(0,0,0,${S.dim/100})`;c.fillRect(0,0,W,H)}
 if(logo)c.drawImage(logo,40,40,290,290);
 c.fillStyle=CL.head;c.textAlign='right';c.textBaseline='alphabetic';
 const hl=(S.head||'').split('\n').map(x=>x.trim()).filter(Boolean),sl=(S.sub||'').split('\n').map(x=>x.trim()).filter(Boolean);let hy=40;
 const blk=(L,sz,wt,col,first)=>{if(!L.length)return;let s=sz;L.forEach(t=>{s=Math.min(s,fit(c,t,680,s,1,wt).s)});c.font=`${wt} ${s}px ${F}`;c.fillStyle=col;L.forEach((t,i)=>c.fillText(t,W-40,hy+s*(first?.82:.95)+(first?0:8)+i*s*1.05));hy+=s*1.05*L.length};
 blk(hl,S.hs||110,S.hw||'bold',CL.head,true);blk(sl,S.ss||48,S.sw||'bold',CL.sub,false);
-const top=Math.max(350,Math.ceil(hy)+40),gap=22,m=ev.length;
-if(!m){c.textAlign='center';c.fillStyle='#111';c.font=`bold 36px ${F}`;c.fillText('Bu aralıkta etkinlik yok',W/2,H/2)}
-else{const cols=m<=1?1:m<=4?2:m<=9?3:4,rows=Math.ceil(m/cols),cw=(W-80-gap*(cols-1))/cols,ch=Math.min((H-100-top-gap*(rows-1))/rows,cw*1.5);
-const gx=40;ev.forEach((e,i)=>card(c,gx+(i%cols)*(cw+gap),top+Math.floor(i/cols)*(ch+gap),cw,ch,e,ims[i]))}
-c.textAlign='left';c.textBaseline='alphabetic';c.fillStyle=CL.foot;c.font=`bold 26px ${F}`;c.fillText('Porto Montenegro, Boka Place',40,H-38);
+const gap=16,top=Math.max(350,Math.ceil(hy)+30),s=Math.min((W-80-2*gap)/3,(H-top-60-2*gap)/3),x0=(W-(3*s+2*gap))/2;
+ds.forEach((k,i)=>box(c,x0+(i%3)*(s+gap),top+Math.floor(i/3)*(s+gap),s,k,S.days[k],ims[i]));
+const ax=x0+2*(s+gap),ab=top+2*(s+gap)+s-s*.02,ad=['Porto Montenegro,','Boka Place'],af=Math.min(28,s*.1);
+c.textAlign='left';c.textBaseline='alphabetic';c.fillStyle=CL.foot;c.font=`bold ${af}px ${F}`;ad.forEach((t,i)=>c.fillText(t,ax,ab-(ad.length-1-i)*af*1.25));
 CV=cv;$('#pv').src=cv.toDataURL('image/png');$('#out').hidden=false;if(!q)$('#out').scrollIntoView({behavior:'smooth'})}
 $('#go').onclick=draw;
 const blob=()=>new Promise(r=>CV.toBlob(r,'image/png'));
@@ -209,20 +222,12 @@ o.innerHTML='<div style="background:#fff;color:#111;border-radius:14px;padding:2
 document.body.appendChild(o);document.getElementById('lb').onclick=()=>{firebase.auth().signInWithEmailAndPassword(document.getElementById('le').value.trim(),document.getElementById('lp').value).then(()=>o.remove()).catch(()=>{document.getElementById('lm').textContent='E-posta veya \u015fifre hatal\u0131'})}}
 let db=null;try{const C=window.FIREBASE_CONFIG;if(C&&C.apiKey&&C.apiKey.indexOf('PASTE')<0){firebase.initializeApp(C);db=firebase.firestore();}}catch(x){console.error(x);db=null}
 if(!db){$('#st').textContent='Bu cihazda saklanıyor (ortak liste kapalı)';ui();return}
-DB=db;S.events=[];$('#st').textContent='Ortak liste: bağlanıyor…';
-try{const us=await claude.use('user');if(us&&(await us.can('data.write'))===false)CAN=false}catch(x){}
-let OLD=null;try{OLD=JSON.parse(localStorage.getItem('jj-v1'))}catch(x){}
-const imp=()=>{let done=false;try{done=!!localStorage.getItem('jj-imp')}catch(x){}$('#imp').hidden=!(CAN&&OLD&&OLD.events&&OLD.events.length&&!S.events.length&&!done)};
-$('#imp').onclick=async()=>{let bad=0;for(const e of OLD.events){try{await DB.doc('events/'+e.id).set({date:e.date||'',title:e.title||'',time:e.time||'',img:e.img||null})}catch(x){bad++}}
-try{const o={};SK.forEach(k=>{if(OLD[k]!==undefined)o[k]=OLD[k]});await DB.doc('settings/main').set(o);if(OLD.bg)await DB.doc('settings/bg').set({img:OLD.bg});localStorage.setItem('jj-imp','1')}catch(x){bad++}
-if(bad)alert(bad+' kayıt aktarılamadı (fotoğraf çok büyük olabilir)')};
+DB=db;S.days={};$('#st').textContent='Ortak liste: bağlanıyor…';
 const tm=setTimeout(()=>{$('#st').textContent='Ortak listeye ulaşılamıyor, veriler güncel olmayabilir'},10000);
-const ok=()=>{clearTimeout(tm);$('#st').textContent=CAN?'Ortak mod: Kaydet\u2019e basınca herkes görür':'Sadece görüntüleme: düzenleme izniniz yok'};
+const ok=()=>{clearTimeout(tm);$('#st').textContent='Ortak mod: Kaydet’e basınca herkes görür'};
 const er=x=>{clearTimeout(tm);$('#st').textContent='Bağlantı hatası';console.error(x)};
-db.collection('events').onSnapshot(s=>{const m=new Map(S.events.map(e=>[String(e.id),e])),n=[];
-s.docs.forEach(d=>{if(DEL.has(d.id))return;const x=d.data()||{},o=m.get(d.id);n.push(o&&TQ['e'+d.id]?o:{id:d.id,date:x.date||'',title:x.title||'',time:x.time||'',img:x.img||null})});
-S.events.forEach(o=>{if(TQ['e'+o.id]&&!n.some(z=>String(z.id)===String(o.id)))n.push(o)});
-S.events=n;ok();refresh();imp()},er);
+db.collection('days').onSnapshot(s=>{const n={};s.docs.forEach(d=>{if(DEL.has(d.id))return;const x=d.data()||{};n[d.id]=TQ['d'+d.id]&&S.days[d.id]?S.days[d.id]:{title:x.title||'',time:x.time||'',img:x.img||null}});
+Object.keys(S.days).forEach(k=>{if(TQ['d'+k]&&!n[k])n[k]=S.days[k]});S.days=n;ok();refresh()},er);
 db.doc('settings/main').onSnapshot(d=>{const x=d.exists?d.data():null;if(x&&!TQ.s)SK.forEach(k=>{if(x[k]!==undefined)S[k]=x[k]});ok();refresh()},er);
 db.doc('settings/bg').onSnapshot(d=>{if(!TQ.bg)S.bg=d.exists?(d.data().img||null):null;refresh()},er);
 ui();lock();$('#bar').hidden=false;$('#sv').onclick=doSave;$('#qs').onclick=quick;pend();
