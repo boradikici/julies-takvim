@@ -80,8 +80,7 @@ window.FIREBASE_CONFIG={apiKey:"AIzaSyCtYuMrxzVD8vOqd2ucsVURdQxny9nD1YE",authDom
 <section id="gen"><button class="pri" id="go">Görsel oluştur</button></section>
 <section id="out" hidden style="order:3">
 <img id="pv" alt="Önizleme">
-<div class="b"><button id="sh">Paylaş / Kaydet</button><button id="dl">PNG indir</button></div>
-<div class="hint">iPhone’da “Paylaş / Kaydet” → “Görüntüyü Kaydet”. Olmazsa görsele basılı tutup kaydedebilirsin. Boyut: 1080×1440 (3:4).</div>
+<div class="hint">Görseli telefona kaydetmek için alttaki <b>Fotoğraflara indir</b> düğmesini kullan. Boyut: 1080×1440 (3:4).</div>
 </section>
 <section>
 <h2>Günler</h2>
@@ -119,7 +118,7 @@ pend();if(bad)document.getElementById('sm').textContent=bad+' de\u011fi\u015fikl
 window.addEventListener('beforeunload',e=>{if(DB&&Object.keys(TQ).length){e.preventDefault();e.returnValue=''}});
 async function quick(){const b=$('#qs'),t=b.textContent;b.disabled=true;b.textContent='Haz\u0131rlan\u0131yor\u2026';
 try{await draw(true);const bl=await blob(),f=new File([bl],'julies-jazz-takvim.png',{type:'image/png'});
-if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]})}catch(e){if(e&&e.name!=='AbortError'){$('#out').scrollIntoView({behavior:'smooth'});$('#sm').textContent='G\u00f6rsel haz\u0131r: a\u015fa\u011f\u0131daki Payla\u015f / Kaydet\u2019e bas'}}}
+if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]})}catch(e){if(e&&e.name!=='AbortError'){$('#out').scrollIntoView({behavior:'smooth'});$('#sm').textContent='G\u00f6rsel haz\u0131r: \u00f6nizlemeye bas\u0131l\u0131 tutup kaydet'}}}
 else dl(bl)}catch(x){console.error(x)}b.disabled=false;b.textContent=t}
 document.addEventListener('focusout',()=>{if(PU)setTimeout(()=>{if(PU)refresh()},150)});
 const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -213,9 +212,6 @@ CV=cv;$('#pv').src=cv.toDataURL('image/png');$('#out').hidden=false;if(!q)$('#ou
 $('#go').onclick=draw;
 const blob=()=>new Promise(r=>CV.toBlob(r,'image/png'));
 async function dl(b){try{const d=typeof claude!=='undefined'?await claude.use('downloads'):null;if(d){await d.save({filename:'julies-jazz-takvim.png',data:b});return}}catch(x){if(x&&x.code==='declined')return}const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='julies-jazz-takvim.png';a.click()}
-$('#dl').onclick=async()=>dl(await blob());
-$('#sh').onclick=async()=>{const b=await blob(),f=new File([b],'julies-jazz-takvim.png',{type:'image/png'});
-if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]})}catch(e){if(!e||e.name!=='AbortError')dl(b)}}else dl(b)};
 ui();
 (async()=>{
 try{const p=JSON.parse(localStorage.getItem('jj-p')||'null');if(p)Object.assign(S,p)}catch(x){}
