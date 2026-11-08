@@ -173,7 +173,7 @@ const n=String(d.getDate()).padStart(2,'0');c.fillText(n,x,y+fs*.8);const nw=c.m
 c.font=`bold ${sz}px ${F}`;c.fillText(TM[d.getMonth()],x+nw+w*.025,y+fs*.4);c.fillText(TD[d.getDay()],x+nw+w*.025,y+fs*.4+sz*1.15);
 photo(c,im,x,y+dH,w,pH);
 const ry=y+dH+pH;c.fillStyle='#f70000';c.fillRect(x,ry,w,rH);
-const p=w*.05,f=fit(c,(e.title||'').toLocaleUpperCase('tr'),w-2*p,rH*.42,2),lh=f.s*1.02;
+const p=w*.05,f=fit(c,(e.title||'').trim(),w-2*p,rH*.42,2),lh=f.s*1.02;
 c.font=`bold ${f.s}px ${F}`;c.fillStyle=CL.title;let ty=ry+rH/2-(f.L.length-1)*lh/2+f.s*.35;f.L.forEach((t,i)=>c.fillText(t,x+p,ty+i*lh));
 if(HT){c.fillStyle='#0a0a0a';c.fillRect(x,ry+rH,w,bH);
 const g=fit(c,(e.time||'').trim(),w-2*p,bH*.5,1);c.font=`bold ${g.s}px ${F}`;c.fillStyle=CL.time;c.textAlign='center';c.fillText(g.L[0]||'',x+w/2,ry+rH+bH/2+g.s*.35)}}
@@ -185,7 +185,7 @@ const bg=c.createLinearGradient(0,0,W,H);bg.addColorStop(0,'#9b968d');bg.addColo
 if(bgi){const k=Math.max(W/bgi.width,H/bgi.height),iw=bgi.width*k,ih=bgi.height*k;c.drawImage(bgi,(W-iw)/2,(H-ih)/2,iw,ih);c.fillStyle=`rgba(0,0,0,${S.dim/100})`;c.fillRect(0,0,W,H)}
 if(logo)c.drawImage(logo,40,40,290,290);
 c.fillStyle=CL.head;c.textAlign='right';c.textBaseline='alphabetic';
-const hl=(S.head||'').split('\n').map(x=>x.trim().toLocaleUpperCase('en')).filter(Boolean),sl=(S.sub||'').split('\n').map(x=>x.trim()).filter(Boolean);let hy=40;
+const hl=(S.head||'').split('\n').map(x=>x.trim()).filter(Boolean),sl=(S.sub||'').split('\n').map(x=>x.trim()).filter(Boolean);let hy=40;
 const blk=(L,sz,wt,col,first)=>{if(!L.length)return;let s=sz;L.forEach(t=>{s=Math.min(s,fit(c,t,680,s,1,wt).s)});c.font=`${wt} ${s}px ${F}`;c.fillStyle=col;L.forEach((t,i)=>c.fillText(t,W-40,hy+s*(first?.82:.95)+(first?0:8)+i*s*1.05));hy+=s*1.05*L.length};
 blk(hl,S.hs||110,S.hw||'bold',CL.head,true);blk(sl,S.ss||48,S.sw||'bold',CL.sub,false);
 const top=Math.max(350,Math.ceil(hy)+40),gap=22,m=ev.length;
