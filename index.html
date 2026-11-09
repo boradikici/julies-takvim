@@ -204,7 +204,7 @@ const hl=(S.head||'').split('\n').map(x=>x.trim()).filter(Boolean),sl=(S.sub||''
 const blk=(L,sz,wt,col,first)=>{if(!L.length)return;let s=sz;L.forEach(t=>{s=Math.min(s,fit(c,t,680,s,1,wt).s)});c.font=`${wt} ${s}px ${F}`;c.fillStyle=col;L.forEach((t,i)=>c.fillText(t,W-40,hy+s*(first?.82:.95)+(first?0:8)+i*s*1.05));hy+=s*1.05*L.length};
 blk(hl,S.hs||110,S.hw||'bold',CL.head,true);blk(sl,S.ss||48,S.sw||'bold',CL.sub,false);
 const gap=16,top=Math.max(390,Math.ceil(hy)+50),s=Math.min((W-80-2*gap)/3,(H-top-40-2*gap)/3),gx=(W-80-3*s)/2,x0=40;
-const P=[[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1]];
+const P=[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0]];
 ds.forEach((k,i)=>box(c,x0+P[i][1]*(s+gx),top+P[i][0]*(s+gap),s,k,S.days[k],ims[i]));
 const ax=W-40,ab=top+2*(s+gap)+s,ad=['Porto Montenegro,','Boka Place'],af=Math.min(28,s*.1);
 const bc=(S.bgc||'#ffffff').toLowerCase();let fcol=CL.foot;if(!bgi&&String(fcol).toLowerCase()===bc)fcol='#0b0b0b';
