@@ -85,7 +85,8 @@ window.FIREBASE_CONFIG={apiKey:"AIzaSyCtYuMrxzVD8vOqd2ucsVURdQxny9nD1YE",authDom
 <label class="lb">Arka plan</label><div class="bgr"><label class="btn">Fotoğraf seç<input type="file" id="bgf" accept="image/*" hidden></label><button id="bgx">Kaldır</button></div><div class="hint" id="bgs"></div>
 <label class="lb">Arka plan rengi</label><div class="fr"><input type="color" id="bgc"><button id="bgr">Varsayılan</button></div><div class="hint">Arka plan fotoğrafı seçilirse fotoğraf renkten önce görünür.</div>
 <label class="lb">Arka plan karartma: <span id="dv"></span>%</label><input type="range" id="dim" min="0" max="85" style="width:100%">
-<label class="lb">Yazı renkleri</label><div class="cols"><label>Başlık <input type="color" data-k="head"></label><label>Alt başlık <input type="color" data-k="sub"></label><label>Tarih (boş gün) <input type="color" data-k="dateE"></label><label>Tarih (fotoğraflı) <input type="color" data-k="dateP"></label><label>Etkinlik adı <input type="color" data-k="title"></label><label>Saat <input type="color" data-k="time"></label><label>Adres <input type="color" data-k="foot"></label></div>
+<label class="lb">Yazı renkleri</label><div class="cols"><label>Başlık <input type="color" data-k="head"></label><label>Alt başlık <input type="color" data-k="sub"></label><label>Tarih (boş gün) <input type="color" data-k="dateE"></label><label>Tarih (fotoğraflı) <input type="color" data-k="dateP"></label><label>Etkinlik adı <input type="color" data-k="title"></label><label>Saat <input type="color" data-k="time"></label><label>Ek metin <input type="color" data-k="extra"></label><label>Adres <input type="color" data-k="foot"></label></div>
+<label class="lb">Adresin üzerinde gösterilecek ek metin</label><textarea id="extraText" rows="2" placeholder="Ek metni yazın (Enter ile alt satır)"></textarea><div class="fr"><select id="ew"><option value="bold">Bold</option><option value="300">Light</option></select><label>Punto <input type="number" id="ers" min="8" max="80" step="1"></label></div>
 <div class="hint"><span style="display:inline-block;width:12px;height:12px;background:#f70000;border-radius:3px;vertical-align:-1px;margin-right:6px"></span>Logo Kırmızı RGB: 247:0:0</div>
 <button id="cr" style="width:100%;margin-top:8px">Renkleri varsayılana döndür</button>
 <label class="chk"><input type="checkbox" id="bwc" checked> Fotoğrafları siyah-beyaz yap</label>
@@ -111,8 +112,9 @@ let S={bw:true,days:{}};
 try{const s=localStorage.getItem('jj-v1');if(s)S=JSON.parse(s)}catch(e){}
 if(S.head===undefined)S.head='NOVEMBER';if(S.dim===undefined)S.dim=30;
 if(S.sub===undefined){const p=(S.head||'').split('\n');S.head=p[0]||'';S.sub=p.slice(1).join(' ')}
+if(S.extraText===undefined)S.extraText='';if(S.ew===undefined)S.ew='bold';if(S.ers===undefined)S.ers=28;
 S.days=S.days||{};S.hw=S.hw||'bold';S.hs=S.hs||110;S.sw=S.sw||'bold';S.ss=S.ss||48;
-let DB=null,CAN=true,PU=false,SAVED='Tüm değişiklikler kaydedildi';const DEL=new Set();const TQ={},SK=['head','sub','hw','hs','sw','ss','dim','bgc','col','bw'];
+let DB=null,CAN=true,PU=false,SAVED='Tüm değişiklikler kaydedildi';const DEL=new Set();const TQ={},SK=['head','sub','hw','hs','sw','ss','dim','bgc','col','bw','extraText','ew','ers'];
 const werr=er=>{if(er&&er.code==='quota_exceeded')alert('Depolama dolu. Eski fotoğrafları silin.');else if(er&&er.code==='invalid_argument')alert('Kaydedilemedi: düzenleme izniniz olmayabilir veya fotoğraf çok büyük.');else console.error(er)};
 function later(k,fn){TQ[k]=fn;pend()}
 const dayData=d=>({title:d.title||'',time:d.time||'',img:d.img||null});
@@ -144,7 +146,7 @@ function days8(){const d=pd(S.wk);return [...Array(7)].map((_,i)=>{const x=new D
 let SEL=null;
 function ui(){const W=weeks();if(!S.wk||!W.some(w=>w.s===S.wk)){const t=S.wk||iso(new Date());S.wk=(W.filter(w=>w.s<=t).pop()||W[0]).s}
 const sl=$('#wk');if(!sl.options.length)W.forEach(w=>sl.add(new Option(w.l,w.s)));sl.value=S.wk;
-$('#bwc').checked=S.bw;$('#hd').value=S.head;$('#sb').value=S.sub;$('#hw').value=S.hw;$('#sw').value=S.sw;$('#hs').value=S.hs;$('#ss').value=S.ss;$('#dim').value=S.dim;$('#dv').textContent=S.dim;bgs();cols();$('#bgc').value=S.bgc||'#ffffff';
+$('#bwc').checked=S.bw;$('#hd').value=S.head;$('#sb').value=S.sub;$('#hw').value=S.hw;$('#sw').value=S.sw;$('#hs').value=S.hs;$('#ss').value=S.ss;$('#extraText').value=S.extraText;$('#ew').value=S.ew;$('#ers').value=S.ers;$('#dim').value=S.dim;$('#dv').textContent=S.dim;bgs();cols();$('#bgc').value=S.bgc||'#ffffff';
 renderDays()}
 function renderDays(){const ds=days8(),t=$('#tiles');t.innerHTML='';if(!SEL||!ds.includes(SEL))SEL=ds[0];
 ds.forEach(k=>{const d=pd(k),e=S.days[k],b=document.createElement('button');b.className='tile'+(k===SEL?' on':'')+(e&&(e.img||e.title||e.time)?' has':'');
@@ -175,7 +177,7 @@ bs[0].onclick=()=>{let u='';for(const R of [800,640,520])for(const q of [.82,.7,
 $('#wk').onchange=e=>{S.wk=e.target.value;SEL=null;savePref();ui()};
 $('#bwc').onchange=e=>{S.bw=e.target.checked;save()};
 function bgs(){$('#bgs').textContent=S.bg?'Arka plan seçili':'Arka plan yok (gri zemin)'}
-const DC={head:'#0b0b0b',sub:'#0b0b0b',dateE:'#0b0b0b',dateP:'#ffffff',title:'#0b0b0b',time:'#0b0b0b',foot:'#0b0b0b'};
+const DC={head:'#0b0b0b',sub:'#0b0b0b',dateE:'#0b0b0b',dateP:'#ffffff',title:'#0b0b0b',time:'#0b0b0b',extra:'#0b0b0b',foot:'#0b0b0b'};
 function cols(){document.querySelectorAll('input[data-k]').forEach(i=>{i.value=(S.col&&S.col[i.dataset.k])||DC[i.dataset.k];i.oninput=()=>{S.col=Object.assign({},S.col,{[i.dataset.k]:i.value});save()}})}
 $('#hd').oninput=e=>{S.head=e.target.value;save()};
 $('#sb').oninput=e=>{S.sub=e.target.value;save()};
@@ -183,6 +185,9 @@ $('#hw').onchange=e=>{S.hw=e.target.value;save()};
 $('#sw').onchange=e=>{S.sw=e.target.value;save()};
 $('#hs').oninput=e=>{S.hs=+e.target.value||110;save()};
 $('#ss').oninput=e=>{S.ss=+e.target.value||48;save()};
+$('#extraText').oninput=e=>{S.extraText=e.target.value;save()};
+$('#ew').onchange=e=>{S.ew=e.target.value;save()};
+$('#ers').oninput=e=>{S.ers=Math.max(8,Math.min(80,+e.target.value||28));save()};
 $('#dim').oninput=e=>{S.dim=+e.target.value;$('#dv').textContent=S.dim;save()};
 $('#bgx').onclick=()=>{S.bg=null;saveBg();bgs()};
 $('#bgc').oninput=e=>{S.bgc=e.target.value;save()};
@@ -220,9 +225,12 @@ blk(hl,S.hs||110,S.hw||'bold',CL.head,true);blk(sl,S.ss||48,S.sw||'bold',CL.sub,
 const gap=16,top=Math.max(390,Math.ceil(hy)+50),s=Math.min((W-80-2*gap)/3,(H-top-40-2*gap)/3),gx=(W-80-3*s)/2,x0=40;
 const P=[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0]];
 ds.forEach((k,i)=>box(c,x0+P[i][1]*(s+gx),top+P[i][0]*(s+gap),s,k,S.days[k],ims[i]));
-const ax=W-40,ab=top+2*(s+gap)+s,ad=['Porto Montenegro,','Boka Place'],af=Math.min(28,s*.1);
+const ax=W-40,ab=top+2*(s+gap)+s;
+const ad=['Porto Montenegro,','Boka Place'];const af=28;
 const bc=(S.bgc||'#ffffff').toLowerCase();let fcol=CL.foot;if(!bgi&&String(fcol).toLowerCase()===bc)fcol='#0b0b0b';
-c.textAlign='right';c.textBaseline='alphabetic';c.fillStyle=fcol;c.font=`bold ${af}px ${F}`;ad.forEach((t,i)=>c.fillText(t,ax,ab-(ad.length-1-i)*af*1.25));
+c.textAlign='right';c.textBaseline='alphabetic';c.fillStyle=fcol;c.font=`bold ${af}px ${F}`;ad.forEach((t,i)=>c.fillText(t,ax,ab-(ad.length-1-i)*af*1.25,600));
+const extra=(S.extraText||'').split(/\\r?\\n/).map(t=>t.trim()).filter(Boolean),ef=Math.min(80,Math.max(8,+S.ers||28));
+if(extra.length){c.fillStyle=CL.extra||'#0b0b0b';c.font=`${S.ew||'bold'} ${ef}px ${F}`;extra.forEach((t,i)=>c.fillText(t,ax,ab-ad.length*af*1.25-18-(extra.length-1-i)*ef*1.2,600));}
 CV=cv;$('#pv').src=cv.toDataURL('image/png');$('#out').hidden=false;if(!q)$('#out').scrollIntoView({behavior:'smooth'})}
 $('#go').onclick=draw;
 const blob=()=>new Promise(r=>CV.toBlob(r,'image/png'));
